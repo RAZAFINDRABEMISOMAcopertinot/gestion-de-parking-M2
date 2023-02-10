@@ -10,6 +10,10 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QLabel, QPushButton, QRadioB
                              QGroupBox, QVBoxLayout, QHBoxLayout, QGridLayout, QFormLayout, QLineEdit, QComboBox,
                              QStackedLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QDateEdit)
 
+# Base de donnée
+from db_connection import conn, cur
+
+
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -23,7 +27,6 @@ class MainWindow(QWidget):
         self.stack.addWidget(self.abonnement_wdg())
 
         self.stack.addWidget(self.payement_wdg())
-
 
     def initializeUI(self):
         """Cette fonction sert à initialiser l'application."""
@@ -100,8 +103,6 @@ class MainWindow(QWidget):
     def registerTab(self):
         """Formulaire d'inscription."""
 
-        user = User()
-
         header_label = QLabel("S'incrire")
         header_label.setObjectName("Header")
         header_label.setFont(QFont("Arial", 18))
@@ -109,11 +110,9 @@ class MainWindow(QWidget):
 
         self.last_name_edit = QLineEdit()
         self.last_name_edit.setPlaceholderText("Nom")
-        # self.last_name_edit.textEdited.connect()
 
         self.first_name_edit = QLineEdit()
         self.first_name_edit.setPlaceholderText("Prénom")
-        # self.first_name_edit.textEdited.connect()
 
         self.email_edit = QLineEdit()
         self.email_edit.setPlaceholderText("<username>@<domain>.com")
@@ -121,18 +120,18 @@ class MainWindow(QWidget):
         regex = QRegularExpression("\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[com]{3}\\b",
                                    reg_opt.PatternOption.CaseInsensitiveOption)
         self.email_edit.setValidator(QRegularExpressionValidator(regex))
-        # self.email_edit.textEdited.connect()
 
         self.password_edit = QLineEdit()
         self.password_edit.setPlaceholderText("Mot de passe")
         self.password_edit.setEchoMode(QLineEdit.EchoMode.Password)
 
-        roles_combo = QComboBox()
-        roles_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        roles_combo.addItems(user.getRoles())
+        self.roles_combo = QComboBox()
+        self.roles_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.roles_combo.addItems(User.getRoles())
 
         submit_button = QPushButton("SOUMETTRE")
         submit_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        submit_button.clicked.connect(self.registerHandler)
 
         about_us = QLabel()
         about_us.setObjectName("AboutUs")
@@ -161,16 +160,43 @@ class MainWindow(QWidget):
             Qt.AlignmentFlag.AlignTop)
         register_form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
         register_form.addRow(header_label)
-        register_form.addRow("Nom", self.last_name_edit)
-        register_form.addRow("Prénom", self.first_name_edit)
-        register_form.addRow("Email", self.email_edit)
-        register_form.addRow("Mot de Passe", self.password_edit)
-        register_form.addRow("Mot de Passe", roles_combo)
+        register_form.addRow("Nom:", self.last_name_edit)
+        register_form.addRow("Prénom:", self.first_name_edit)
+        register_form.addRow("Email:", self.email_edit)
+        register_form.addRow("Mot de Passe:", self.password_edit)
+        register_form.addRow("Rôles:", self.roles_combo)
         register_form.addRow(submit_button)
         register_form.addRow(about_us)
 
         # Ajouter le layout dans la fenêtre principale
         self.register_tab.setLayout(register_form)
+
+    def registerHandler(self):
+        nom = self.last_name_edit.text()
+        prénom = self.first_name_edit.text()
+        email = self.email_edit.text()
+        password = self.password_edit.text()
+        rôle = self.roles_combo.currentText()
+
+        if nom != "" and prénom != "" and email != "" and password != "":
+            user = User(nom, prénom, email, rôle)
+
+            user.setPassword(password)
+
+            try:
+
+                cur.execute("""
+                    INSERT INTO utilisateurs (NOM, PRENOM, EMAIL, MOTDEPASSE, RÔLE) VALUES   (%s, %s, %s, %s, %s)
+                """, (user.getNom(), user.getPrénom(), user.getEmail(), user.getPassword(), user.getRôle()))
+
+                conn.commit()
+
+                self.last_name_edit.clear()
+                self.first_name_edit.clear()
+                self.email_edit.clear()
+                self.password_edit.clear()
+            except:
+                print("Tsy nanjary aii")
 
     def managementTab(self):
         management_box = QHBoxLayout()
@@ -484,7 +510,6 @@ class MainWindow(QWidget):
         abn_form.addRow("Prix:", prix_edit)
         abn_form.addRow(abn_add_btn)
 
-
         # Listes de abonnemnts dispo
         abn_dispo_gp = QGroupBox()
         abn_dispo_gp.setTitle("Les abonnements disponnibles")
@@ -510,7 +535,6 @@ class MainWindow(QWidget):
 
     def carteAbnTab(self):
         carte_abn_v_box = QVBoxLayout()
-
 
         # formulaire pour les abonnements
         carte_abn_gp = QGroupBox()

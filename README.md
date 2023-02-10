@@ -16,3 +16,9 @@ Pour faire marché cet projet
 
     >> pip install -r requirements.txt
 
+5 - il suffit vous avez mysql installé pour la base de donnée
+
+6 - lancer le logiciel 
+
+    >> python main.py
+
