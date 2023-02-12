@@ -102,14 +102,13 @@ class Chauffeur:
 
 
 class Permis:
-    _id_chauffeur = ""
 
     _CATEGORIES = ["A", "Aprim", "B", "C", "D", "E", "F"]
 
-    def __init__(self, cim, categorie, validité):
+    def __init__(self, cim, categorie, chauffeur):
         self._cim = cim
         self._categorie = categorie
-        self._validité = validité
+        self._id_chauffeur = chauffeur
 
     @classmethod
     def getCatgories(cls):
@@ -137,4 +136,13 @@ class Permis:
         self._categorie = categorie
 
     def setValidité(self, validité):
-        self._validité = validité
+        # Enlever les espces
+        validité = re.sub("\s+", "", validité)
+
+        # Convertir la date en objet datetime
+        validité_date_object = datetime.datetime.strptime(validité, "%m/%d/%Y")
+
+        # Formater l'objet datetime sous la forme YYYY-MM-DD
+        formatted_date = validité_date_object.strftime("%Y-%m-%d")
+
+        self._validité = formatted_date

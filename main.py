@@ -9,7 +9,7 @@ from PyQt5.QtGui import QFont, QRegularExpressionValidator, QCursor
 from stylesheet import style_sheet
 from PyQt5.QtWidgets import (QApplication, QWidget, QLabel, QPushButton, QTabWidget,
                              QGroupBox, QVBoxLayout, QHBoxLayout, QFormLayout, QLineEdit, QComboBox,
-                             QStackedLayout, QTableWidget, QTableWidgetItem, QHeaderView, QDateEdit)
+                             QStackedLayout, QTableWidget, QTableWidgetItem, QHeaderView, QDateEdit, QSpinBox)
 
 # les models
 from models import User, Chauffeur, Permis
@@ -463,21 +463,38 @@ class MainWindow(QWidget):
 
         self.perm_category_idit = QComboBox()
         self.perm_category_idit.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.perm_category_idit.addItems(["A", "Aprim", "B", "C", "D", "E", "F"])
+        self.perm_category_idit.addItems(Permis.getCatgories())
 
         self.perm_validation_edit = QDateEdit()
         self.perm_validation_edit.setDisplayFormat("MM/dd/yyyy")
-        self.perm_validation_edit.setMaximumDate(QDate.currentDate())
+        start_date = QDate.currentDate()
+        self.perm_validation_edit.setMaximumDate(start_date.addYears(5))
         self.perm_validation_edit.setCalendarPopup(True)
         self.perm_validation_edit.setDate(QDate.currentDate())
+
+        try:
+            self.db = Database()
+            self.db.cur.execute("SELECT PRENOM FROM chauffeurs ")
+            chauff_data = self.db.cur.fetchall()
+            chauff_list = [x[0] for x in chauff_data]
+        except Exception as e:
+            print(e.args[0])
+
+        self.perm_titulair_combo = QComboBox()
+        self.perm_titulair_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.perm_titulair_combo.addItems(chauff_list)
+
+
 
         # Boutton de soummission pour permis
         self.perm_add_btn = QPushButton("Ajouter")
         self.perm_add_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.perm_add_btn.clicked.connect(self.permisRegisterHandler)
 
         permis_form.addRow("CIM:", self.perm_cim_idit)
         permis_form.addRow("CATEGORY:", self.perm_category_idit)
         permis_form.addRow("Valable jusque le:", self.perm_validation_edit)
+        permis_form.addRow("Titulaire:", self.perm_titulair_combo)
         permis_form.addRow(self.perm_add_btn)
 
         permis_gp.setLayout(permis_form)
@@ -692,6 +709,39 @@ class MainWindow(QWidget):
                 print("Tsy nanjary", e.args[0])
         else:
             print("Les champs sont tous obligatoires")
+
+    def permisRegisterHandler(self):
+        cim = self.perm_cim_idit.text()
+        category = self.perm_category_idit.currentText()
+        titulair = self.perm_titulair_combo.currentText()
+        val = self.perm_validation_edit.text()
+        try:
+            self.db = Database()
+            self.db.cur.execute("SELECT * FROM chauffeurs WHERE PRENOM=%s", (titulair,))
+            chauff_data = self.db.cur.fetchall()
+            chauff_id = int(chauff_data[0][0])
+            if cim != "" and category != "" and chauff_id != "":
+                permis_obj = Permis(cim, category, chauff_id)
+                permis_obj.setValidité(val)
+
+                self.db = Database()
+                self.db.cur.execute("""
+                                    INSERT INTO permis (CIM, CATEGORIE, VALIDITE, CHAUFFEUR_ID) VALUES   (%s, %s, %s, %s)
+                                """, (
+                permis_obj.getCim(), permis_obj.getCategorie(), permis_obj.getValidité(), permis_obj.getChauffeur()))
+
+                self.db.con.commit()
+
+                self.perm_cim_idit.clear()
+
+            else:
+                print("Tous les champs sont tous obligatoires.")
+
+        except Exception as e:
+            print("tsssssss", e.args[0])
+
+
+
 
 
 if __name__ == '__main__':
