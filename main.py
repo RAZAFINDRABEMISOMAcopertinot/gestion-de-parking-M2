@@ -1,18 +1,127 @@
 # importer les modules necessaires
-
+import re
 import sys
+import datetime
+import pymysql
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QRegularExpression, QDate
 from PyQt5.QtGui import QFont, QRegularExpressionValidator, QCursor
 from stylesheet import style_sheet
-from models import User
-from PyQt5.QtWidgets import (QApplication, QWidget, QLabel, QPushButton, QRadioButton, QButtonGroup, QTabWidget,
-                             QGroupBox, QVBoxLayout, QHBoxLayout, QGridLayout, QFormLayout, QLineEdit, QComboBox,
-                             QStackedLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QDateEdit)
+from PyQt5.QtWidgets import (QApplication, QWidget, QLabel, QPushButton, QTabWidget,
+                             QGroupBox, QVBoxLayout, QHBoxLayout, QFormLayout, QLineEdit, QComboBox,
+                             QStackedLayout, QTableWidget, QTableWidgetItem, QHeaderView, QDateEdit)
+
+# les models
+from models import User, Chauffeur, Permis
+
 
 # Base de donnée
-from db_connection import conn, cur
+class Database:
+    def __init__(self):
+        host = 'localhost'
+        user = 'root'
+        passwd = ''
+        db = 'parking'
 
+        self.con = pymysql.connect(host=host, user=user, passwd=passwd, db=db)
+
+        self.cur = self.con.cursor()
+
+
+class LoginWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initializeUI()
+
+    def initializeUI(self):
+        """Cette fonction sert à initialiser l'application."""
+        self.setMinimumSize(600, 700)
+        self.setWindowTitle("Gestion de parking")
+        self.setWindowIcon(QIcon("images/parking_logo.png"))
+        self.setUpMainWindow()
+        self.show()
+
+    def setUpMainWindow(self):
+        # Créer tab bar, les differents tabs, and set  object names pour les styler
+        self.tab_bar = QTabWidget()
+        self.login_tab = QWidget()
+        self.login_tab.setObjectName("Tabs")
+
+        self.tab_bar.addTab(self.login_tab, "Se connecter")
+
+        self.loginTab()
+
+        # Ajouter les widgets à la fenêtre principale
+        main_h_box = QHBoxLayout()
+        main_h_box.addWidget(self.tab_bar)
+        self.setLayout(main_h_box)
+
+    def loginTab(self):
+        header_label = QLabel("Se connecter")
+        header_label.setObjectName("Header")
+        header_label.setFont(QFont("Arial", 18))
+        header_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.email_login_edit = QLineEdit()
+        self.email_login_edit.setPlaceholderText("<username>@<domain>.com")
+        reg_opt = QRegularExpression()
+        regex = QRegularExpression("\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[com]{3}\\b",
+                                   reg_opt.PatternOption.CaseInsensitiveOption)
+        self.email_login_edit.setValidator(QRegularExpressionValidator(regex))
+        # self.email_edit.textEdited.connect()
+
+        self.password_login_edit = QLineEdit()
+        self.password_login_edit.setPlaceholderText("Mot de passe")
+        self.password_login_edit.setEchoMode(QLineEdit.EchoMode.Password)
+
+        self.login_error_lbl = QLabel()
+        self.login_error_lbl.setObjectName("LoginError")
+
+        submit_button = QPushButton("SOUMETTRE")
+        submit_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        submit_button.clicked.connect(self.loginHandler)
+
+        # Organiser les widgets et les layouts dans QFormLayout
+        self.login_form = QFormLayout()
+        self.login_form.setObjectName("LoginForm")
+        self.login_form.setFieldGrowthPolicy(self.login_form.FieldGrowthPolicy.AllNonFixedFieldsGrow)
+        self.login_form.setFormAlignment(
+            Qt.AlignmentFlag.AlignHCenter | \
+            Qt.AlignmentFlag.AlignTop)
+        self.login_form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.login_form.addRow(header_label)
+        self.login_form.addRow("Email:", self.email_login_edit)
+        self.login_form.addRow("Mot de Passe:", self.password_login_edit)
+        self.login_form.addRow(self.login_error_lbl)
+        self.login_form.addRow(submit_button)
+
+        # Ajouter le layout dans la fenêtre principale
+        self.login_tab.setLayout(self.login_form)
+
+    def loginHandler(self):
+        email_log = self.email_login_edit.text()
+        self.db = Database()
+        self.db.cur.execute("SELECT * FROM utilisateurs WHERE EMAIL=%s", (email_log,))
+        user_data = self.db.cur.fetchall()
+
+        if user_data:
+            password = self.password_login_edit.text()
+            hashed_password = user_data[0][4]
+
+            try:
+                cred = User.checkPassword(password, hashed_password)
+                if cred:
+                    window.show()
+                    log_window.close()
+                else:
+                    self.login_error_lbl.setText("Votre mot de passe est incorrecte.")
+            except Exception as e:
+                self.login_error_lbl.setText("Votre mot de passe est incorrecte.")
+
+        else:
+            self.login_error_lbl.setText("Assurez-vous que l'adresse votre email et mot de soient correctes.")
+
+        print(user_data)
 
 
 class MainWindow(QWidget):
@@ -34,27 +143,24 @@ class MainWindow(QWidget):
         self.setWindowTitle("Gestion de parking")
         self.setWindowIcon(QIcon("images/parking_logo.png"))
         self.setUpMainWindow()
-        self.show()
 
     def setUpMainWindow(self):
         """Créer et arranger les widgets dans la fenêtre principale ."""
 
         # Créer tab bar, les differents tabs, and set  object names pour les styler
         self.tab_bar = QTabWidget()
-        self.login_tab = QWidget()
-        self.login_tab.setObjectName("Tabs")
+        # self.login_tab = QWidget()
+        # self.login_tab.setObjectName("Tabs")
         self.register_tab = QWidget()
         self.register_tab.setObjectName("Tabs")
 
         self.management_tab = QWidget()
         self.management_tab.setObjectName("Tabs")
 
-        self.tab_bar.addTab(self.login_tab, "Se connecter")
         self.tab_bar.addTab(self.register_tab, "S'inscrire")
         self.tab_bar.addTab(self.management_tab, "Acceuil")
 
         # Appeler les methodes qui contiennent les widgets pour chaque tabs
-        self.loginTab()
         self.registerTab()
         self.managementTab()
 
@@ -62,43 +168,6 @@ class MainWindow(QWidget):
         main_h_box = QHBoxLayout()
         main_h_box.addWidget(self.tab_bar)
         self.setLayout(main_h_box)
-
-    def loginTab(self):
-        header_label = QLabel("Se connecter")
-        header_label.setObjectName("Header")
-        header_label.setFont(QFont("Arial", 18))
-        header_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.email_edit = QLineEdit()
-        self.email_edit.setPlaceholderText("<username>@<domain>.com")
-        reg_opt = QRegularExpression()
-        regex = QRegularExpression("\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[com]{3}\\b",
-                                   reg_opt.PatternOption.CaseInsensitiveOption)
-        self.email_edit.setValidator(QRegularExpressionValidator(regex))
-        # self.email_edit.textEdited.connect()
-
-        self.password_edit = QLineEdit()
-        self.password_edit.setPlaceholderText("Mot de passe")
-        self.password_edit.setEchoMode(QLineEdit.EchoMode.Password)
-
-        submit_button = QPushButton("SOUMETTRE")
-        submit_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-
-        # Organiser les widgets et les layouts dans QFormLayout
-        login_form = QFormLayout()
-        login_form.setObjectName("LoginForm")
-        login_form.setFieldGrowthPolicy(login_form.FieldGrowthPolicy.AllNonFixedFieldsGrow)
-        login_form.setFormAlignment(
-            Qt.AlignmentFlag.AlignHCenter | \
-            Qt.AlignmentFlag.AlignTop)
-        login_form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
-        login_form.addRow(header_label)
-        login_form.addRow("Email", self.email_edit)
-        login_form.addRow("Mot de Passe", self.password_edit)
-        login_form.addRow(submit_button)
-
-        # Ajouter le layout dans la fenêtre principale
-        self.login_tab.setLayout(login_form)
 
     def registerTab(self):
         """Formulaire d'inscription."""
@@ -184,19 +253,19 @@ class MainWindow(QWidget):
             user.setPassword(password)
 
             try:
-
-                cur.execute("""
+                self.db = Database()
+                self.db.cur.execute("""
                     INSERT INTO utilisateurs (NOM, PRENOM, EMAIL, MOTDEPASSE, RÔLE) VALUES   (%s, %s, %s, %s, %s)
                 """, (user.getNom(), user.getPrénom(), user.getEmail(), user.getPassword(), user.getRôle()))
 
-                conn.commit()
+                self.db.con.commit()
 
                 self.last_name_edit.clear()
                 self.first_name_edit.clear()
                 self.email_edit.clear()
                 self.password_edit.clear()
-            except:
-                print("Tsy nanjary aii")
+            except Exception as e:
+                print(e.args[0])
 
     def managementTab(self):
         management_box = QHBoxLayout()
@@ -355,25 +424,31 @@ class MainWindow(QWidget):
         chauff_gp.setTitle("Information de Chauffeur")
 
         chauff_form = QFormLayout()
-        nom_edit = QLineEdit()
-        nom_edit.setPlaceholderText("Nom")
+        self.chauff_nom_edit = QLineEdit()
+        self.chauff_nom_edit.setPlaceholderText("Nom")
 
-        prénom_edit = QLineEdit()
-        prénom_edit.setPlaceholderText("Prénom")
+        self.chauff_prénom_edit = QLineEdit()
+        self.chauff_prénom_edit.setPlaceholderText("Prénom")
 
-        date_naissance_edit = QDateEdit()
-        date_naissance_edit.setDisplayFormat("MM / dd / yyyy")
-        date_naissance_edit.setMaximumDate(QDate.currentDate())
-        date_naissance_edit.setCalendarPopup(True)
-        date_naissance_edit.setDate(QDate.currentDate())
+        self.chauff_date_naissance_edit = QDateEdit()
+        self.chauff_date_naissance_edit.setDisplayFormat("MM / dd / yyyy")
+        self.chauff_date_naissance_edit.setMaximumDate(QDate.currentDate())
+        self.chauff_date_naissance_edit.setCalendarPopup(True)
+        self.chauff_date_naissance_edit.setDate(QDate.currentDate())
 
-        lieu_naissance_edit = QLineEdit()
-        lieu_naissance_edit.setPlaceholderText("Lieu de naissance")
+        self.chauff_lieu_naissance_edit = QLineEdit()
+        self.chauff_lieu_naissance_edit.setPlaceholderText("Lieu de naissance")
 
-        chauff_form.addRow("Nom:", nom_edit)
-        chauff_form.addRow("Prénom:", prénom_edit)
-        chauff_form.addRow("Date de naissance:", date_naissance_edit)
-        chauff_form.addRow("Lieu de naissance:", lieu_naissance_edit)
+        # Boutton de soummission pour chauffeur
+        self.chauff_add_btn = QPushButton("Ajouter")
+        self.chauff_add_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.chauff_add_btn.clicked.connect(self.chauffeurRegisterHandler)
+
+        chauff_form.addRow("Nom:", self.chauff_nom_edit)
+        chauff_form.addRow("Prénom:", self.chauff_prénom_edit)
+        chauff_form.addRow("Date de naissance:", self.chauff_date_naissance_edit)
+        chauff_form.addRow("Lieu de naissance:", self.chauff_lieu_naissance_edit)
+        chauff_form.addRow(self.chauff_add_btn)
 
         chauff_gp.setLayout(chauff_form)
 
@@ -383,32 +458,32 @@ class MainWindow(QWidget):
 
         permis_form = QFormLayout()
 
-        perm_cim_idit = QLineEdit()
-        perm_cim_idit.setPlaceholderText("CIM")
+        self.perm_cim_idit = QLineEdit()
+        self.perm_cim_idit.setPlaceholderText("CIM")
 
-        perm_category_idit = QComboBox()
-        perm_category_idit.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        perm_category_idit.addItems(["A", "Aprim", "B", "C", "D", "E", "F"])
+        self.perm_category_idit = QComboBox()
+        self.perm_category_idit.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.perm_category_idit.addItems(["A", "Aprim", "B", "C", "D", "E", "F"])
 
-        perm_validation_edit = QDateEdit()
-        perm_validation_edit.setDisplayFormat("MM / dd / yyyy")
-        perm_validation_edit.setMaximumDate(QDate.currentDate())
-        perm_validation_edit.setCalendarPopup(True)
-        perm_validation_edit.setDate(QDate.currentDate())
+        self.perm_validation_edit = QDateEdit()
+        self.perm_validation_edit.setDisplayFormat("MM/dd/yyyy")
+        self.perm_validation_edit.setMaximumDate(QDate.currentDate())
+        self.perm_validation_edit.setCalendarPopup(True)
+        self.perm_validation_edit.setDate(QDate.currentDate())
 
-        permis_form.addRow("CIM:", perm_cim_idit)
-        permis_form.addRow("CATEGORY:", perm_category_idit)
-        permis_form.addRow("Valable jusque le:", perm_validation_edit)
+        # Boutton de soummission pour permis
+        self.perm_add_btn = QPushButton("Ajouter")
+        self.perm_add_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
+        permis_form.addRow("CIM:", self.perm_cim_idit)
+        permis_form.addRow("CATEGORY:", self.perm_category_idit)
+        permis_form.addRow("Valable jusque le:", self.perm_validation_edit)
+        permis_form.addRow(self.perm_add_btn)
 
         permis_gp.setLayout(permis_form)
 
-        # Boutton de soummission
-        chauff_add_btn = QPushButton("Ajouter")
-        chauff_add_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-
         chauff_v_box.addWidget(chauff_gp)
         chauff_v_box.addWidget(permis_gp)
-        chauff_v_box.addWidget(chauff_add_btn)
 
         self.creer_chauffeur_tab.setLayout(chauff_v_box)
 
@@ -587,9 +662,41 @@ class MainWindow(QWidget):
 
         self.creer_carte_abn_tab.setLayout(carte_abn_v_box)
 
+    def chauffeurRegisterHandler(self):
+        nom = self.chauff_nom_edit.text()
+        prénom = self.chauff_prénom_edit.text()
+        date_naissance = self.chauff_date_naissance_edit.text()
+        lieu_naissance = self.chauff_lieu_naissance_edit.text()
+
+
+        if nom != "" and prénom != "" and date_naissance != "" and lieu_naissance != "":
+            chauffeur = Chauffeur(nom, prénom, lieu_naissance)
+
+            try:
+                chauffeur.setDateNaissance(date_naissance)
+            except Exception as e:
+                print(e.args[0])
+
+            try:
+                self.db = Database()
+                self.db.cur.execute("""
+                    INSERT INTO chauffeurs (NOM, PRENOM, DATE_NAISSANCE, LIEU_NAISSANCE) VALUES   (%s, %s, %s, %s)
+                """, (chauffeur.getNom(), chauffeur.getPrénom(), chauffeur.getDateNaissance(), chauffeur.getLieuNaissance()))
+
+                self.db.con.commit()
+
+                self.chauff_nom_edit.clear()
+                self.chauff_prénom_edit.clear()
+                self.chauff_lieu_naissance_edit.clear()
+            except Exception as e:
+                print("Tsy nanjary", e.args[0])
+        else:
+            print("Les champs sont tous obligatoires")
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setStyleSheet(style_sheet)
     window = MainWindow()
+    log_window = LoginWindow()
     sys.exit(app.exec())

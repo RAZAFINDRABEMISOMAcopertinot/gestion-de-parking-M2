@@ -69,5 +69,9 @@ style_sheet = """
         border-radius: 4px;
         border-color: #EFD096;
     }
+    QLabel#LoginError{
+        background-color: #77CCFF;
+        color: #C92108;
+    }
     
 """
