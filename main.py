@@ -27,6 +27,24 @@ class Database:
 
         self.cur = self.con.cursor()
 
+# Login fonctionalité
+# créer un cookie pour stoker l'authentification
+session_cookie = cookies.SimpleCookie()
+session_cookie["autheniticated"] = False
+log_db_con = pymysql.connect(host='localhost', user='root', passwd='', db='parking')
+log_db_cur = log_db_con.cursor()
+
+try:
+    log_db_cur.execute(""" SELECT * FROM authentication """)
+    auth_data = log_db_cur.fetchone()
+    if auth_data != None and auth_data[1] == 1:
+        session_cookie["authenticated"] = True
+    else:
+        session_cookie["authenticated"] = False
+
+except Exception as e:
+    print(e.args[0])
+
 
 
 
@@ -72,6 +90,10 @@ class MainWindow(QWidget):
         self.tab_bar.addTab(self.login_tab, "Se connecter")
         self.tab_bar.addTab(self.register_tab, "S'inscrire")
         self.tab_bar.addTab(self.management_tab, "Acceuil")
+
+        # Cacher les deux tabs pour raison de sécurité
+        self.tab_bar.setTabVisible(1, False)
+        self.tab_bar.setTabVisible(2, False)
 
 
 
@@ -144,9 +166,9 @@ class MainWindow(QWidget):
                     self.db.cur.execute(""" INSERT INTO authentication (AUTH, UTILISATEUR_ID) VALUES (%s, %s)""",
                                         (True, ut_id))
                     self.db.con.commit()
-                    # session_cookie["authenticated"] = True
-                    # session_cookie["user"] = str(ut_id)
-                    # print(session_cookie.get('authenticated').value, session_cookie.get('user').value)
+                    self.tab_bar.setTabVisible(0, False)
+                    self.tab_bar.setTabVisible(1, True)
+                    self.tab_bar.setTabVisible(2, True)
                     self.email_login_edit.clear()
                     self.password_login_edit.clear()
                     self.tab_bar.setCurrentIndex(2)
@@ -872,7 +894,9 @@ class MainWindow(QWidget):
             self.db.cur.execute("""DELETE FROM authentication""")
             self.db.cur.close()
             self.db.con.commit()
-            self.tab_bar.setCurrentIndex(0)
+            self.tab_bar.setTabVisible(0, True)
+            self.tab_bar.setTabVisible(1, False)
+            self.tab_bar.setTabVisible(2, False)
         except Exception as e:
             print(e.args[0])
 
