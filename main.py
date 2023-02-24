@@ -1,8 +1,8 @@
 # importer les modules necessaires
-import re
+import os
 import sys
-import datetime
 import pymysql
+from http import cookies
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QRegularExpression, QDate
 from PyQt5.QtGui import QFont, QRegularExpressionValidator, QCursor
@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QLabel, QPushButton, QTabWid
                              QStackedLayout, QTableWidget, QTableWidgetItem, QHeaderView, QDateEdit, QSpinBox)
 
 # les models
-from models import User, Chauffeur, Permis
+from models import User, Chauffeur, Permis, Voiture, CarteGrise, Abonnement
 
 
 # Base de donnée
@@ -23,15 +23,30 @@ class Database:
         passwd = ''
         db = 'parking'
 
-        self.con = pymysql.connect(host=host, user=user, passwd=passwd, db=db)
+        self.con = pymysql.connect(host=host, user=user, passwd=passwd, db=db, autocommit=True)
 
         self.cur = self.con.cursor()
 
 
-class LoginWindow(QWidget):
+
+
+class MainWindow(QWidget):
     def __init__(self):
+        """ Constructeur de la classe Mainwindow """
         super().__init__()
+
+
+
+
+
+        self.stack = QStackedLayout()
         self.initializeUI()
+
+        self.stack.addWidget(self.dashboard_wdg())
+
+        self.stack.addWidget(self.abonnement_wdg())
+
+        self.stack.addWidget(self.payement_wdg())
 
     def initializeUI(self):
         """Cette fonction sert à initialiser l'application."""
@@ -42,14 +57,28 @@ class LoginWindow(QWidget):
         self.show()
 
     def setUpMainWindow(self):
+        """Créer et arranger les widgets dans la fenêtre principale ."""
+
         # Créer tab bar, les differents tabs, and set  object names pour les styler
         self.tab_bar = QTabWidget()
         self.login_tab = QWidget()
         self.login_tab.setObjectName("Tabs")
+        self.register_tab = QWidget()
+        self.register_tab.setObjectName("Tabs")
+
+        self.management_tab = QWidget()
+        self.management_tab.setObjectName("Tabs")
 
         self.tab_bar.addTab(self.login_tab, "Se connecter")
+        self.tab_bar.addTab(self.register_tab, "S'inscrire")
+        self.tab_bar.addTab(self.management_tab, "Acceuil")
 
+
+
+        # Appeler les methodes qui contiennent les widgets pour chaque tabs
         self.loginTab()
+        self.registerTab()
+        self.managementTab()
 
         # Ajouter les widgets à la fenêtre principale
         main_h_box = QHBoxLayout()
@@ -68,7 +97,6 @@ class LoginWindow(QWidget):
         regex = QRegularExpression("\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[com]{3}\\b",
                                    reg_opt.PatternOption.CaseInsensitiveOption)
         self.email_login_edit.setValidator(QRegularExpressionValidator(regex))
-        # self.email_edit.textEdited.connect()
 
         self.password_login_edit = QLineEdit()
         self.password_login_edit.setPlaceholderText("Mot de passe")
@@ -107,67 +135,31 @@ class LoginWindow(QWidget):
         if user_data:
             password = self.password_login_edit.text()
             hashed_password = user_data[0][4]
+            ut_id = user_data[0][0]
 
             try:
                 cred = User.checkPassword(password, hashed_password)
                 if cred:
-                    window.show()
-                    log_window.close()
+                    self.db = Database()
+                    self.db.cur.execute(""" INSERT INTO authentication (AUTH, UTILISATEUR_ID) VALUES (%s, %s)""",
+                                        (True, ut_id))
+                    self.db.con.commit()
+                    # session_cookie["authenticated"] = True
+                    # session_cookie["user"] = str(ut_id)
+                    # print(session_cookie.get('authenticated').value, session_cookie.get('user').value)
+                    self.email_login_edit.clear()
+                    self.password_login_edit.clear()
+                    self.tab_bar.setCurrentIndex(2)
                 else:
                     self.login_error_lbl.setText("Votre mot de passe est incorrecte.")
             except Exception as e:
-                self.login_error_lbl.setText("Votre mot de passe est incorrecte.")
+                self.login_error_lbl.setText("Votre mot de passe est incorrecte.", e.args[0])
 
         else:
             self.login_error_lbl.setText("Assurez-vous que l'adresse votre email et mot de soient correctes.")
 
         print(user_data)
-
-
-class MainWindow(QWidget):
-    def __init__(self):
-        """ Constructeur de la classe Mainwindow """
-        super().__init__()
-        self.stack = QStackedLayout()
-        self.initializeUI()
-
-        self.stack.addWidget(self.dashboard_wdg())
-
-        self.stack.addWidget(self.abonnement_wdg())
-
-        self.stack.addWidget(self.payement_wdg())
-
-    def initializeUI(self):
-        """Cette fonction sert à initialiser l'application."""
-        self.setMinimumSize(600, 700)
-        self.setWindowTitle("Gestion de parking")
-        self.setWindowIcon(QIcon("images/parking_logo.png"))
-        self.setUpMainWindow()
-
-    def setUpMainWindow(self):
-        """Créer et arranger les widgets dans la fenêtre principale ."""
-
-        # Créer tab bar, les differents tabs, and set  object names pour les styler
-        self.tab_bar = QTabWidget()
-        # self.login_tab = QWidget()
-        # self.login_tab.setObjectName("Tabs")
-        self.register_tab = QWidget()
-        self.register_tab.setObjectName("Tabs")
-
-        self.management_tab = QWidget()
-        self.management_tab.setObjectName("Tabs")
-
-        self.tab_bar.addTab(self.register_tab, "S'inscrire")
-        self.tab_bar.addTab(self.management_tab, "Acceuil")
-
-        # Appeler les methodes qui contiennent les widgets pour chaque tabs
-        self.registerTab()
-        self.managementTab()
-
-        # Ajouter les widgets à la fenêtre principale
-        main_h_box = QHBoxLayout()
-        main_h_box.addWidget(self.tab_bar)
-        self.setLayout(main_h_box)
+        self.db.con.close()
 
     def registerTab(self):
         """Formulaire d'inscription."""
@@ -300,9 +292,15 @@ class MainWindow(QWidget):
         payement_button.clicked.connect(lambda: self.stack.setCurrentIndex(2))
         payement_button.setObjectName("BackBut")
 
+        decon_button = QPushButton("Se déconnecter")
+        decon_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        decon_button.clicked.connect(self.deconexionHandler)
+        decon_button.setObjectName("BackBut")
+
         menu_v_layout.addWidget(dashbord_button)
         menu_v_layout.addWidget(abonnement_button)
         menu_v_layout.addWidget(payement_button)
+        menu_v_layout.addWidget(decon_button)
 
         menu_gbox.setLayout(menu_v_layout)
 
@@ -443,6 +441,7 @@ class MainWindow(QWidget):
         self.chauff_add_btn = QPushButton("Ajouter")
         self.chauff_add_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.chauff_add_btn.clicked.connect(self.chauffeurRegisterHandler)
+        self.chauff_add_btn.clicked.connect(self.reloadWindow)
 
         chauff_form.addRow("Nom:", self.chauff_nom_edit)
         chauff_form.addRow("Prénom:", self.chauff_prénom_edit)
@@ -472,19 +471,9 @@ class MainWindow(QWidget):
         self.perm_validation_edit.setCalendarPopup(True)
         self.perm_validation_edit.setDate(QDate.currentDate())
 
-        try:
-            self.db = Database()
-            self.db.cur.execute("SELECT PRENOM FROM chauffeurs ")
-            chauff_data = self.db.cur.fetchall()
-            chauff_list = [x[0] for x in chauff_data]
-        except Exception as e:
-            print(e.args[0])
-
         self.perm_titulair_combo = QComboBox()
         self.perm_titulair_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.perm_titulair_combo.addItems(chauff_list)
-
-
+        self.perm_titulair_combo.addItems(self.recupererPénomChauffeur())
 
         # Boutton de soummission pour permis
         self.perm_add_btn = QPushButton("Ajouter")
@@ -504,6 +493,30 @@ class MainWindow(QWidget):
 
         self.creer_chauffeur_tab.setLayout(chauff_v_box)
 
+    def recupererPénomChauffeur(self):
+        try:
+            while True:
+                self.db = Database()
+                self.db.cur.execute("SELECT PRENOM FROM chauffeurs ")
+                chauff_data = self.db.cur.fetchall()
+                chauff_list = [x[0] for x in chauff_data]
+                return chauff_list
+                self.db.con.close()
+        except Exception as e:
+            print(e.args[0])
+
+    def recupererLesVehicules(self):
+        try:
+            while True:
+                self.db = Database()
+                self.db.cur.execute("SELECT NUM_IMM FROM voitures ")
+                voiture_data = self.db.cur.fetchall()
+                voiture_list = [x[0] for x in voiture_data]
+                return voiture_list
+                self.db.con.close()
+        except Exception as e:
+            print(e.args[0])
+
     def vehiculeTab(self):
         veh_v_box = QVBoxLayout()
 
@@ -513,23 +526,30 @@ class MainWindow(QWidget):
 
         veh_form = QFormLayout()
 
-        num_imm_edit = QLineEdit()
-        num_imm_edit.setPlaceholderText("Numéro d'immatriculation")
+        self.veh_num_imm_edit = QLineEdit()
+        self.veh_num_imm_edit.setPlaceholderText("Numéro d'immatriculation")
 
-        marque_edit = QLineEdit()
-        marque_edit.setPlaceholderText("Marque de la voiture")
+        self.veh_marque_edit = QLineEdit()
+        self.veh_marque_edit.setPlaceholderText("Marque de la voiture")
 
-        couleur_edit = QLineEdit()
-        couleur_edit.setPlaceholderText("Couleur de la voiture")
+        self.veh_couleur_edit = QLineEdit()
+        self.veh_couleur_edit.setPlaceholderText("Couleur de la voiture")
 
-        chauffeur_combo = QComboBox()
-        chauffeur_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        chauffeur_combo.addItems(["Kelly", "Coperty", "Safidy", "Blandine", "Eggla"])
+        self.veh_chauffeur_combo = QComboBox()
+        self.veh_chauffeur_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.veh_chauffeur_combo.addItems(self.recupererPénomChauffeur())
 
-        veh_form.addRow("Num IMM:", num_imm_edit)
-        veh_form.addRow("Marque:", marque_edit)
-        veh_form.addRow("Couleur:", couleur_edit)
-        veh_form.addRow("Chauffeur", chauffeur_combo)
+        # Boutton de soummission pour une véhicule
+        veh_add_btn = QPushButton("Ajouter")
+        veh_add_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        veh_add_btn.clicked.connect(self.vehiculeRegisterHandler)
+        veh_add_btn.clicked.connect(self.reloadWindow)
+
+        veh_form.addRow("Num IMM:", self.veh_num_imm_edit)
+        veh_form.addRow("Marque:", self.veh_marque_edit)
+        veh_form.addRow("Couleur:", self.veh_couleur_edit)
+        veh_form.addRow("Chauffeur", self.veh_chauffeur_combo)
+        veh_form.addRow(veh_add_btn)
 
         veh_gp.setLayout(veh_form)
 
@@ -539,42 +559,49 @@ class MainWindow(QWidget):
 
         carte_grise_form = QFormLayout()
 
-        energy_edit = QLineEdit()
-        energy_edit.setPlaceholderText("Energie utilisé")
+        self.energy_edit = QLineEdit()
+        self.energy_edit.setPlaceholderText("Energie utilisé")
 
-        type_edit = QLineEdit()
-        type_edit.setPlaceholderText("Type")
+        self.type_edit = QLineEdit()
+        self.type_edit.setPlaceholderText("Type")
 
-        numbre_place_edit = QLineEdit()
-        numbre_place_edit.setPlaceholderText("Nombre de place")
+        self.numbre_place_edit = QLineEdit()
+        self.numbre_place_edit.setPlaceholderText("Nombre de place")
 
-        genre_edit = QLineEdit()
-        genre_edit.setPlaceholderText("Genre")
+        self.genre_edit = QLineEdit()
+        self.genre_edit.setPlaceholderText("Genre")
 
-        imm_combo = QComboBox()
-        imm_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        imm_combo.addItems(["VUI", "VNI", "MHP", "CP"])
+        self.imm_combo = QComboBox()
+        self.imm_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.imm_combo.addItems(CarteGrise.getImmatriculation())
 
-        date_circulation_edit = QDateEdit()
-        date_circulation_edit.setDisplayFormat("MM / dd / yyyy")
-        date_circulation_edit.setMaximumDate(QDate.currentDate())
-        date_circulation_edit.setCalendarPopup(True)
-        date_circulation_edit.setDate(QDate.currentDate())
+        self.date_circulation_edit = QDateEdit()
+        self.date_circulation_edit.setDisplayFormat("MM / dd / yyyy")
+        self.date_circulation_edit.setMaximumDate(QDate.currentDate())
+        self.date_circulation_edit.setCalendarPopup(True)
+        self.date_circulation_edit.setDate(QDate.currentDate())
 
-        carte_grise_form.addRow("Energie:", energy_edit)
-        carte_grise_form.addRow("Type:", type_edit)
-        carte_grise_form.addRow("Nombre de place:", numbre_place_edit)
-        carte_grise_form.addRow("Date de mise en circulation:", date_circulation_edit)
+        self.carte_titulair_combo = QComboBox()
+        self.carte_titulair_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.carte_titulair_combo.addItems(self.recupererLesVehicules())
+
+        # Boutton de soummission pour une carte grise
+        carte_grise_add_btn = QPushButton("Ajouter")
+        carte_grise_add_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        carte_grise_add_btn.clicked.connect(self.carteGriseRegisterHandler)
+
+        carte_grise_form.addRow("Energie:", self.energy_edit)
+        carte_grise_form.addRow("Type:", self.type_edit)
+        carte_grise_form.addRow("Nombre de place:", self.numbre_place_edit)
+        carte_grise_form.addRow("Immatriculation:", self.imm_combo)
+        carte_grise_form.addRow("Date de mise en circulation:", self.date_circulation_edit)
+        carte_grise_form.addRow("Apartient à:", self.carte_titulair_combo)
+        carte_grise_form.addRow(carte_grise_add_btn)
 
         carte_grise_gp.setLayout(carte_grise_form)
 
-        # Boutton de soummission
-        veh_add_btn = QPushButton("Ajouter")
-        veh_add_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-
         veh_v_box.addWidget(veh_gp)
         veh_v_box.addWidget(carte_grise_gp)
-        veh_v_box.addWidget(veh_add_btn)
 
         self.creer_vehicule_tab.setLayout(veh_v_box)
 
@@ -587,19 +614,20 @@ class MainWindow(QWidget):
 
         abn_form = QFormLayout()
 
-        type_abn_combo = QComboBox()
-        type_abn_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        type_abn_combo.addItems(["PERMANENT", "JOUR", "NUIT"])
+        self.type_abn_combo = QComboBox()
+        self.type_abn_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.type_abn_combo.addItems(Abonnement.getAllTypes())
 
-        prix_edit = QLineEdit()
-        prix_edit.setPlaceholderText("Prix de l'abonnement en AR")
+        self.prix_edit = QLineEdit()
+        self.prix_edit.setPlaceholderText("Prix de l'abonnement en AR")
 
         # Boutton de soummission
         abn_add_btn = QPushButton("Ajouter")
         abn_add_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        abn_add_btn.clicked.connect(self.addAbonnementHandler)
 
-        abn_form.addRow("Type:", type_abn_combo)
-        abn_form.addRow("Prix:", prix_edit)
+        abn_form.addRow("Type:", self.type_abn_combo)
+        abn_form.addRow("Prix:", self.prix_edit)
         abn_form.addRow(abn_add_btn)
 
         # Listes de abonnemnts dispo
@@ -685,7 +713,6 @@ class MainWindow(QWidget):
         date_naissance = self.chauff_date_naissance_edit.text()
         lieu_naissance = self.chauff_lieu_naissance_edit.text()
 
-
         if nom != "" and prénom != "" and date_naissance != "" and lieu_naissance != "":
             chauffeur = Chauffeur(nom, prénom, lieu_naissance)
 
@@ -698,7 +725,9 @@ class MainWindow(QWidget):
                 self.db = Database()
                 self.db.cur.execute("""
                     INSERT INTO chauffeurs (NOM, PRENOM, DATE_NAISSANCE, LIEU_NAISSANCE) VALUES   (%s, %s, %s, %s)
-                """, (chauffeur.getNom(), chauffeur.getPrénom(), chauffeur.getDateNaissance(), chauffeur.getLieuNaissance()))
+                """, (
+                    chauffeur.getNom(), chauffeur.getPrénom(), chauffeur.getDateNaissance(),
+                    chauffeur.getLieuNaissance()))
 
                 self.db.con.commit()
 
@@ -728,7 +757,8 @@ class MainWindow(QWidget):
                 self.db.cur.execute("""
                                     INSERT INTO permis (CIM, CATEGORIE, VALIDITE, CHAUFFEUR_ID) VALUES   (%s, %s, %s, %s)
                                 """, (
-                permis_obj.getCim(), permis_obj.getCategorie(), permis_obj.getValidité(), permis_obj.getChauffeur()))
+                    permis_obj.getCim(), permis_obj.getCategorie(), permis_obj.getValidité(),
+                    permis_obj.getChauffeur()))
 
                 self.db.con.commit()
 
@@ -740,13 +770,115 @@ class MainWindow(QWidget):
         except Exception as e:
             print("tsssssss", e.args[0])
 
+    def vehiculeRegisterHandler(self):
+        num_im = self.veh_num_imm_edit.text()
+        marque = self.veh_marque_edit.text()
+        couleur = self.veh_couleur_edit.text()
+        veh_chauffeur = self.veh_chauffeur_combo.currentText()
+        try:
+            self.db = Database()
+            self.db.cur.execute("SELECT * FROM chauffeurs WHERE PRENOM=%s", (veh_chauffeur,))
+            chauff_data = self.db.cur.fetchall()
+            chauff_id = int(chauff_data[0][0])
 
+            if num_im != "" and marque != "" and couleur != "" and chauff_id != "":
+                voiture_obj = Voiture(num_im, marque, couleur, chauff_id)
 
+                self.db = Database()
+                self.db.cur.execute("""
+                                    INSERT INTO voitures (NUM_IMM, MARQUE, COULEUR, CHAUFFEUR_ID) VALUES   (%s, %s, %s, %s)
+                                """, (
+                    voiture_obj.getNumImm(), voiture_obj.getMarque(), voiture_obj.getCouleur(),
+                    voiture_obj.getChauffeur()))
+
+                self.db.con.commit()
+
+                self.veh_num_imm_edit.clear()
+                self.veh_marque_edit.clear()
+                self.veh_couleur_edit.clear()
+
+            else:
+                print("Tous les champs sont obligatoires.")
+
+        except Exception as e:
+            print(e.args[0])
+
+    def carteGriseRegisterHandler(self):
+        energie = self.energy_edit.text()
+        type = self.type_edit.text()
+        nbr_place = self.numbre_place_edit.text()
+        imm = self.imm_combo.currentText()
+        date_de_m_cir = self.date_circulation_edit.text()
+        veh_num_imm = self.carte_titulair_combo.currentText()
+
+        try:
+            self.db = Database()
+            self.db.cur.execute("SELECT * FROM voitures WHERE NUM_IMM=%s", (veh_num_imm,))
+            veh_data = self.db.cur.fetchall()
+            veh_id = int(veh_data[0][0])
+        except Exception as e:
+            print(e.args[0])
+
+        if energie != "" and type != "" and nbr_place != "" and imm != "" and date_de_m_cir != "":
+            carte_grise = CarteGrise(energie, type, nbr_place, imm, veh_id)
+            carte_grise.setDateDeCirculation(date_de_m_cir)
+
+            print(carte_grise.getEnergie(), carte_grise.getType(), carte_grise.getNomberPlace(), imm,
+                  carte_grise.getDateDeCirculation(), carte_grise.getVehicule())
+
+            try:
+                self.db = Database()
+                self.db.cur.execute("""
+                                       INSERT INTO carte_grises (ENERGIE, TYPE, NUMBRE_PLACE, IMMATRICULATION, DATE_DE_CIRCULATION, VOITURE_ID) VALUES   (%s, %s, %s, %s, %s, %s)
+                   """, (carte_grise.getEnergie(), carte_grise.getType(), carte_grise.getNomberPlace(), imm,
+                         carte_grise.getDateDeCirculation(), carte_grise.getVehicule()))
+                self.db.con.commit()
+
+                self.energy_edit.clear()
+                self.type_edit.clear()
+                self.numbre_place_edit.clear()
+
+            except Exception as e:
+                print(e.args[0])
+
+    def addAbonnementHandler(self):
+        type = self.type_abn_combo.currentText()
+        prix = self.prix_edit.text()
+
+        if type != "" and prix != "":
+            abonnement = Abonnement(type, prix)
+            try:
+                self.db = Database()
+                self.db.cur.execute(""" INSERT INTO abonnements (TYPE, PRIX) VALUES (%s, %s)""",
+                                    (abonnement.getType(), abonnement.getPrix()))
+                self.db.con.commit()
+                self.db.con.close()
+                self.prix_edit.clear()
+            except Exception as e:
+                print(e.args[0])
+
+    def carteAbnHandler(self):
+        print("OK")
+
+    def reloadWindow(self):
+        QApplication.quit()
+        python = sys.executable
+        os.execl(python, python, *sys.argv)
+        self.tab_bar.setCurrentIndex(2)
+
+    def deconexionHandler(self):
+        try:
+            self.db = Database()
+            self.db.cur.execute("""DELETE FROM authentication""")
+            self.db.cur.close()
+            self.db.con.commit()
+            self.tab_bar.setCurrentIndex(0)
+        except Exception as e:
+            print(e.args[0])
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setStyleSheet(style_sheet)
     window = MainWindow()
-    log_window = LoginWindow()
     sys.exit(app.exec())

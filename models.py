@@ -85,7 +85,6 @@ class Chauffeur:
         self._prénom = prénom
 
     def setDateNaissance(self, date_naissance):
-
         # Enlever les espces
         date_naissance = re.sub("\s+", "", date_naissance)
 
@@ -102,8 +101,8 @@ class Chauffeur:
 
 
 class Permis:
-
     _CATEGORIES = ["A", "Aprim", "B", "C", "D", "E", "F"]
+    _validité = ""
 
     def __init__(self, cim, categorie, chauffeur):
         self._cim = cim
@@ -146,3 +145,123 @@ class Permis:
         formatted_date = validité_date_object.strftime("%Y-%m-%d")
 
         self._validité = formatted_date
+
+
+class Voiture:
+
+
+    def __init__(self, num_imm, marque, couleur, chauffeur_id):
+        self._num_imm = num_imm
+        self._marque = marque
+        self._couleur = couleur
+        self._id_chauffeur = chauffeur_id
+
+    def getNumImm(self):
+        return self._num_imm
+
+    def getMarque(self):
+        return self._marque
+
+    def getCouleur(self):
+        return self._couleur
+
+    def getChauffeur(self):
+        return self._id_chauffeur
+
+    def setNumImm(self, num_imm):
+        self._num_imm = num_imm
+
+    def setMarque(self, marque):
+        self._marque = marque
+
+    def setCouleur(self, couleur):
+        self._couleur = couleur
+
+    def setChauffeur(self, id_chauffeur):
+        self._id_chauffeur = id_chauffeur
+
+class CarteGrise:
+
+    _IMMATRICULATION = ["VUI", "VNI", "MHP", "CP"]
+    _date_de_circulation = ""
+
+    def __init__(self, energie, type, nombre_place, genre, id_vehicule):
+        self._energie = energie
+        self._type = type
+        self._nombre_place = nombre_place
+        self._genre = genre
+        self._id_vehicule = id_vehicule
+
+
+    def getEnergie(self):
+        return self._energie
+
+    def getType(self):
+        return self._type
+
+    def getNomberPlace(self):
+        return self._nombre_place
+
+    def getGenre(self):
+        return self._genre
+
+    def getVehicule(self):
+        return self._id_vehicule
+
+    @classmethod
+    def getImmatriculation(cls):
+        return cls._IMMATRICULATION
+
+    def getDateDeCirculation(self):
+        return self._date_de_circulation
+
+    def setEnergie(self, energie):
+        self._energie = energie
+
+    def setType(self, type):
+        self._type = type
+
+    def setNombePlace(self, nombe_place):
+        self._nombre_place = nombe_place
+
+    def setGenre(self, genre):
+        self._genre = genre
+
+    def setDateDeCirculation(self, date_de_circulation):
+        # Enlever les espces
+        date_de_circulation = re.sub("\s+", "", date_de_circulation)
+
+        # Convertir la date en objet datetime
+        date_de_circulation_date_object = datetime.datetime.strptime(date_de_circulation, "%m/%d/%Y")
+
+        # Formater l'objet datetime sous la forme YYYY-MM-DD
+        formatted_date = date_de_circulation_date_object.strftime("%Y-%m-%d")
+
+        self._date_de_circulation = formatted_date
+
+    def setVehicule(self, id_vehicule):
+        self._id_vehicule = id_vehicule
+
+
+class Abonnement:
+    _TYPES = ["PERMANENT", "JOUR", "NUIT"]
+
+    def __init__(self, type, prix):
+        self._type = type
+        self._prix = prix
+
+    @classmethod
+    def getAllTypes(cls):
+        return cls._TYPES
+
+    def getType(self):
+        return self._type
+
+    def getPrix(self):
+        return self._prix
+
+    def setType(self, type):
+        self._type = type
+
+    def setPrix(self, prix):
+        self._prix = prix
