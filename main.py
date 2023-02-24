@@ -92,8 +92,15 @@ class MainWindow(QWidget):
         self.tab_bar.addTab(self.management_tab, "Acceuil")
 
         # Cacher les deux tabs pour raison de sécurité
-        self.tab_bar.setTabVisible(1, False)
-        self.tab_bar.setTabVisible(2, False)
+        if session_cookie.get("authenticated").value == str(True):
+            self.tab_bar.setTabVisible(0, False)
+            self.tab_bar.setTabVisible(1, True)
+            self.tab_bar.setTabVisible(2, True)
+        else:
+            self.tab_bar.setTabVisible(0, True)
+            self.tab_bar.setTabVisible(1, False)
+            self.tab_bar.setTabVisible(2, False)
+
 
 
 
