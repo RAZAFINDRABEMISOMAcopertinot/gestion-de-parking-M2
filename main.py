@@ -28,6 +28,7 @@ class Database:
 
         self.cur = self.con.cursor()
 
+
 # Login fonctionalité
 # créer un cookie pour stoker l'authentification
 session_cookie = cookies.SimpleCookie()
@@ -47,16 +48,10 @@ except Exception as e:
     print(e.args[0])
 
 
-
-
 class MainWindow(QWidget):
     def __init__(self):
         """ Constructeur de la classe Mainwindow """
         super().__init__()
-
-
-
-
 
         self.stack = QStackedLayout()
         self.initializeUI()
@@ -102,9 +97,6 @@ class MainWindow(QWidget):
             self.tab_bar.setTabVisible(0, True)
             self.tab_bar.setTabVisible(1, False)
             self.tab_bar.setTabVisible(2, False)
-
-
-
 
         # Appeler les methodes qui contiennent les widgets pour chaque tabs
         self.loginTab()
@@ -347,43 +339,138 @@ class MainWindow(QWidget):
         header_label.setFont(QFont("Arial", 18))
         header_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        # Tableau des utilisateurs
-        user_table_title = QLabel("Les utilisateurs (05)")
-        user_table = QTableWidget(3, 6)
+        # LES UTILISATEURS
 
-        user_table.setHorizontalHeaderLabels(["ID", "FIRST_NAME", "LAST_NAME", "EMAIL", "PASSWORD", "ROLE"])
+        # Obtenir tous les utilisateurs
+        try:
+            self.db = Database()
+            self.db.cur.execute("SELECT * FROM utilisateurs")
+            utilisateus_data = self.db.cur.fetchall()
+            self.db.cur.close()
+            self.db.con.close()
+        except Exception as e:
+            print(e.args[0])
+
+        # Tableau des utilisateurs
+        user_table_title = QLabel("Les utilisateurs ({})".format(len(utilisateus_data)))
+        user_table = QTableWidget(len(utilisateus_data), 6)
+
+        user_table.setHorizontalHeaderLabels(["ID", "NOM", "PRENOM", "EMAIL", "MOT DE PASSE", "ROLE"])
 
         user_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
 
-        for row in range(3):
-            for col in range(6):
-                item = QTableWidgetItem("Row {} Column {}".format(row + 1, col + 1))
-                user_table.setItem(row, col, item)
+        try:
+            for row, utulisateur in enumerate(utilisateus_data):
+                for col, valeur in enumerate(utulisateur):
+                    item = QTableWidgetItem(valeur)
+                    user_table.setItem(row, col, item)
+        except Exception as e:
+            print(e.args[0])
+
+        # LES ABONNEES
+
+        # Obtenir toutes les abonnées
+        try:
+            self.db = Database()
+            self.db.cur.execute("SELECT * FROM chauffeurs")
+            chauffeurs_data = self.db.cur.fetchall()
+            self.db.cur.close()
+            self.db.con.close()
+        except Exception as e:
+            print(e.args[0])
 
         # Tableau des abonnés
-        abonne_table_title = QLabel("Les chauffeurs abonnés (25)")
-        abonne_table = QTableWidget(3, 6)
-        abonne_table.setHorizontalHeaderLabels(["ID", "FIRST_NAME", "LAST_NAME", "EMAIL", "ABONNEMENT", "VEHICULE"])
+        abonne_table_title = QLabel("Les chauffeurs abonnés ({})".format(len(chauffeurs_data)))
+        abonne_table = QTableWidget(len(chauffeurs_data), 5)
+        abonne_table.setHorizontalHeaderLabels(["ID", "NOM", "PRENOM", "DATE DE NAISSANCCE", "LIEU DE NAISSANCE"])
 
         abonne_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        try:
+            for row, chauffeur in enumerate(chauffeurs_data):
+                for col, valeur in enumerate(chauffeur):
+                    item = QTableWidgetItem(str(valeur))
+                    abonne_table.setItem(row, col, item)
+        except Exception as e:
+            print(e.args[0])
 
-        for row in range(3):
-            for col in range(6):
-                item = QTableWidgetItem("Row {} Column {}".format(row + 1, col + 1))
-                abonne_table.setItem(row, col, item)
+
+        # LES PERMIS
+
+        # Obtenis tous les permis
+        try:
+            self.db = Database()
+            self.db.cur.execute("SELECT * FROM permis")
+            permis_data = self.db.cur.fetchall()
+            self.db.cur.close()
+            self.db.con.close()
+        except Exception as e:
+            print(e.args[0])
+
+        # Tableau de permis
+        permis_table_title = QLabel("Les permis ({})".format(len(permis_data)))
+        permis_table = QTableWidget(len(permis_data), 5)
+        permis_table.setHorizontalHeaderLabels(["ID", "CIM", "CATEGORIE", "VALIDITE", "CHAUFFEUR_ID"])
+
+        permis_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+
+        try:
+            for row, permis in enumerate(permis_data):
+                for col, valeur in enumerate(permis):
+                    item = QTableWidgetItem(str(valeur))
+                    permis_table.setItem(row, col, item)
+        except Exception as e:
+            print(e.args[0])
+
+        # LES VOITURES
+
+        # Obtenir tous les voitures
+        try:
+            self.db = Database()
+            self.db.cur.execute("SELECT * FROM voitures")
+            voitures_data = self.db.cur.fetchall()
+            print(voitures_data)
+        except Exception as e:
+            print(e.args[0])
 
         # Tableau des véhicules
-        vehicule_table_title = QLabel("Les véhicules (35)")
-        vehicule_table = QTableWidget(3, 6)
+        vehicule_table_title = QLabel("Les véhicules ({})".format(len(voitures_data)))
+        vehicule_table = QTableWidget(len(voitures_data), 6)
         vehicule_table.setHorizontalHeaderLabels(
-            ["ID", "MARQUE", "COULEUR", "NUM IMMATRICULE", "ABONNEMENT", "CHAUFFEUR"])
+            ["ID", "NUM IMMATRICULE", "MARQUE", "COULEUR", "DANS LE PACKING", "CHAUFFEUR_ID"])
 
         vehicule_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
 
-        for row in range(3):
-            for col in range(6):
-                item = QTableWidgetItem("Row {} Column {}".format(row + 1, col + 1))
+        for row, voiture in enumerate(voitures_data):
+            for col, valeur in enumerate(voiture):
+                item = QTableWidgetItem(str(valeur))
                 vehicule_table.setItem(row, col, item)
+
+        # LES CARTES GRISES
+
+        # Obtenir toutes les cartes grises
+
+        try:
+            self.db = Database()
+            self.db.cur.execute("SELECT * FROM carte_grises")
+            cartes_grises_data = self.db.cur.fetchall()
+            self.db.cur.close()
+            self.db.con.close()
+        except Exception as e:
+            print(e.args[0])
+
+        # Tableau de cartes grises
+
+        carte_grise_table_title = QLabel("Les cartes grises des véhicules ({})".format(len(cartes_grises_data)))
+        carte_grise_table = QTableWidget(len(cartes_grises_data), 7)
+        carte_grise_table.setHorizontalHeaderLabels(
+            ["ID", "ENERGIE UTILISE", "TYPE", "NOMBRE DE PLACE", "IMMATRICULATION", "DATE DE MISE EN CIRCULATION", "VOITURE_ID"])
+
+        carte_grise_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+
+        for row, carte_grise in enumerate(cartes_grises_data):
+            for col, valeur in enumerate(carte_grise):
+                item = QTableWidgetItem(str(valeur))
+                carte_grise_table.setItem(row, col, item)
 
         dhb_v_box = QVBoxLayout()
 
@@ -392,8 +479,12 @@ class MainWindow(QWidget):
         dhb_v_box.addWidget(user_table)
         dhb_v_box.addWidget(abonne_table_title)
         dhb_v_box.addWidget(abonne_table)
+        dhb_v_box.addWidget(permis_table_title)
+        dhb_v_box.addWidget(permis_table)
         dhb_v_box.addWidget(vehicule_table_title)
         dhb_v_box.addWidget(vehicule_table)
+        dhb_v_box.addWidget(carte_grise_table_title)
+        dhb_v_box.addWidget(carte_grise_table)
 
         dhb_wdg.setLayout(dhb_v_box)
 
@@ -665,6 +756,7 @@ class MainWindow(QWidget):
         abn_dispo_gp = QGroupBox()
         abn_dispo_gp.setTitle("Les abonnements disponnibles")
 
+
         # Tableau des abonnements disponibles
         abn_table = QTableWidget(3, 4)
         abn_table.setHorizontalHeaderLabels(["ID", "TYPE", "PRIX", "DESCRIPTION"])
@@ -726,12 +818,12 @@ class MainWindow(QWidget):
         submit.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         submit.clicked.connect(self.carteAbnHandler)
 
-        carte_abn_form.addRow("Abonnement:",  self.crtabn_abn_combo)
-        carte_abn_form.addRow("Chauffeur:",  self.crtabn_chauffeur_combo)
-        carte_abn_form.addRow("Commencer le:",  self.crtabn_début_edit)
-        carte_abn_form.addRow("Terminer le:",  self.crtabn_fin_edit)
-        carte_abn_form.addRow("Validité:",  self.crtabn_valide_combo)
-        carte_abn_form.addRow("Payé:",  self.crtabn_payer_combo)
+        carte_abn_form.addRow("Abonnement:", self.crtabn_abn_combo)
+        carte_abn_form.addRow("Chauffeur:", self.crtabn_chauffeur_combo)
+        carte_abn_form.addRow("Commencer le:", self.crtabn_début_edit)
+        carte_abn_form.addRow("Terminer le:", self.crtabn_fin_edit)
+        carte_abn_form.addRow("Validité:", self.crtabn_valide_combo)
+        carte_abn_form.addRow("Payé:", self.crtabn_payer_combo)
         carte_abn_form.addRow(submit)
 
         carte_abn_gp.setLayout(carte_abn_form)
@@ -898,8 +990,7 @@ class MainWindow(QWidget):
         validité_abn = self.crtabn_valide_combo.currentText()
         payement = self.crtabn_payer_combo.currentText()
 
-
-        if abonnement_type != "" and chauffeur != "" and debut_abn != "" and fin_abn != "" and validité_abn != ""  and payement != "":
+        if abonnement_type != "" and chauffeur != "" and debut_abn != "" and fin_abn != "" and validité_abn != "" and payement != "":
             if validité_abn == "OUI":
                 validité_abn = True
             else:
@@ -933,7 +1024,6 @@ class MainWindow(QWidget):
             except Exception as e:
                 print(e.args[0])
 
-
             carteAbonnement = CarteAbonnement(abonnement_id, chauffeur_id, payement, validité_abn)
             carteAbonnement.setDebut(debut_abn)
             carteAbonnement.setFin(fin_abn)
@@ -943,20 +1033,21 @@ class MainWindow(QWidget):
                 self.db = Database()
                 self.db.cur.execute("""
                     INSERT INTO carte_abonnements (ID_ABONNEMENT, ID_CHAUFEUR, DEJA_PAYER, ENCORE_VALIDE, DEBUT, FIN) VALUES (%s, %s, %s, %s, %s, %s)
-                """, (carteAbonnement.getAbonnement(), carteAbonnement.getChauffeur(), carteAbonnement.getPayer(), carteAbonnement.getValide(), carteAbonnement.getDebut(), carteAbonnement.getFin()))
+                """, (carteAbonnement.getAbonnement(), carteAbonnement.getChauffeur(), carteAbonnement.getPayer(),
+                      carteAbonnement.getValide(), carteAbonnement.getDebut(), carteAbonnement.getFin()))
                 self.db.con.commit()
                 self.db.con.close()
                 QMessageBox.information(None, 'Carte d\'abonnement', 'Elle a bien éditer.')
             except Exception as e:
                 print(e.args[0])
 
-
-
-
     def reloadWindow(self):
         QApplication.quit()
-        python = sys.executable
-        os.execl(python, python, *sys.argv)
+        try:
+            python = sys.executable
+            os.execl(python, python, *sys.argv)
+        except Exception as e:
+            print(e.args[0])
         self.tab_bar.setCurrentIndex(2)
 
     def deconexionHandler(self):
