@@ -346,8 +346,6 @@ class MainWindow(QWidget):
             self.db = Database()
             self.db.cur.execute("SELECT * FROM utilisateurs")
             utilisateus_data = self.db.cur.fetchall()
-            self.db.cur.close()
-            self.db.con.close()
         except Exception as e:
             print(e.args[0])
 
@@ -374,8 +372,6 @@ class MainWindow(QWidget):
             self.db = Database()
             self.db.cur.execute("SELECT * FROM chauffeurs")
             chauffeurs_data = self.db.cur.fetchall()
-            self.db.cur.close()
-            self.db.con.close()
         except Exception as e:
             print(e.args[0])
 
@@ -401,8 +397,6 @@ class MainWindow(QWidget):
             self.db = Database()
             self.db.cur.execute("SELECT * FROM permis")
             permis_data = self.db.cur.fetchall()
-            self.db.cur.close()
-            self.db.con.close()
         except Exception as e:
             print(e.args[0])
 
@@ -428,7 +422,6 @@ class MainWindow(QWidget):
             self.db = Database()
             self.db.cur.execute("SELECT * FROM voitures")
             voitures_data = self.db.cur.fetchall()
-            print(voitures_data)
         except Exception as e:
             print(e.args[0])
 
@@ -453,8 +446,6 @@ class MainWindow(QWidget):
             self.db = Database()
             self.db.cur.execute("SELECT * FROM carte_grises")
             cartes_grises_data = self.db.cur.fetchall()
-            self.db.cur.close()
-            self.db.con.close()
         except Exception as e:
             print(e.args[0])
 
