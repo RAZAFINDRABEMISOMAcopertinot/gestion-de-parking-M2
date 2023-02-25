@@ -265,3 +265,81 @@ class Abonnement:
 
     def setPrix(self, prix):
         self._prix = prix
+
+
+class CarteAbonnement:
+
+    _debut = ""
+    _fin = ""
+    _DEJAPAYER = ["NON", "OUI"]
+    _ENCOREVALIDE = ["NON", "OUI"]
+
+    def __init__(self, id_abonnement, id_chauffeur, payer=False, valide=True):
+        self._payer = payer
+        self._valide = valide
+        self._id_abonnement = id_abonnement
+        self._id_chauffeur = id_chauffeur
+
+    @classmethod
+    def getDejaPayer(cls):
+        return cls._DEJAPAYER
+
+    @classmethod
+    def getEncoreValide(cls):
+        return cls._ENCOREVALIDE
+
+    def getPayer(self):
+        return self._payer
+
+    def getValide(self):
+        return self._valide
+
+    def getAbonnement(self):
+        return self._id_abonnement
+
+    def getChauffeur(self):
+        return self._id_chauffeur
+
+    def getDebut(self):
+        return self._debut
+
+    def getFin(self):
+        return self._fin
+
+    def setPayer(self):
+        self._payer = True
+
+    def setValide(self, valide):
+        self._valide = valide
+
+    def setAbonnement(self, abn):
+        self._id_abonnement = abn
+
+    def setChauffeur(self, chf):
+        self._id_chauffeur = chf
+
+    def setDebut(self, debut):
+        # Enlever les espces
+        debut = re.sub("\s+", "", debut)
+
+        # Convertir la date en objet datetime
+        debut_object = datetime.datetime.strptime(debut, "%m/%d/%Y")
+
+        # Formater l'objet datetime sous la forme YYYY-MM-DD
+        formatted_date = debut_object.strftime("%Y-%m-%d")
+
+        self._debut = formatted_date
+
+    def setFin(self, fin):
+        # Enlever les espces
+        fin = re.sub("\s+", "", fin)
+
+        # Convertir la date en objet datetime
+        fin_object = datetime.datetime.strptime(fin, "%m/%d/%Y")
+
+        # Formater l'objet datetime sous la forme YYYY-MM-DD
+        formatted_date = fin_object.strftime("%Y-%m-%d")
+
+        self._fin = formatted_date
+
+

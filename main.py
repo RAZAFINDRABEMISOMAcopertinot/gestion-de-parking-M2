@@ -9,10 +9,11 @@ from PyQt5.QtGui import QFont, QRegularExpressionValidator, QCursor
 from stylesheet import style_sheet
 from PyQt5.QtWidgets import (QApplication, QWidget, QLabel, QPushButton, QTabWidget,
                              QGroupBox, QVBoxLayout, QHBoxLayout, QFormLayout, QLineEdit, QComboBox,
-                             QStackedLayout, QTableWidget, QTableWidgetItem, QHeaderView, QDateEdit, QSpinBox)
+                             QStackedLayout, QTableWidget, QTableWidgetItem, QHeaderView, QDateEdit, QSpinBox,
+                             QMessageBox)
 
 # les models
-from models import User, Chauffeur, Permis, Voiture, CarteGrise, Abonnement
+from models import User, Chauffeur, Permis, Voiture, CarteGrise, Abonnement, CarteAbonnement
 
 
 # Base de donnée
@@ -96,6 +97,7 @@ class MainWindow(QWidget):
             self.tab_bar.setTabVisible(0, False)
             self.tab_bar.setTabVisible(1, True)
             self.tab_bar.setTabVisible(2, True)
+            self.tab_bar.setCurrentIndex(2)
         else:
             self.tab_bar.setTabVisible(0, True)
             self.tab_bar.setTabVisible(1, False)
@@ -691,43 +693,45 @@ class MainWindow(QWidget):
 
         carte_abn_form = QFormLayout()
 
-        abn_combo = QComboBox()
-        abn_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        abn_combo.addItems(["PERMANENT", "JOUR", "NUIT"])
+        self.crtabn_abn_combo = QComboBox()
+        self.crtabn_abn_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.crtabn_abn_combo.addItems(["PERMANENT", "JOUR", "NUIT"])
 
-        chauffeur_combo = QComboBox()
-        chauffeur_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        chauffeur_combo.addItems(["Kelly", "Coperty", "Safidy", "Blandine", "Eggla"])
+        self.crtabn_chauffeur_combo = QComboBox()
+        self.crtabn_chauffeur_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.crtabn_chauffeur_combo.addItems(self.recupererPénomChauffeur())
 
-        début_edit = QDateEdit()
-        début_edit.setDisplayFormat("MM / dd / yyyy")
-        début_edit.setMaximumDate(QDate.currentDate())
-        début_edit.setCalendarPopup(True)
-        début_edit.setDate(QDate.currentDate())
+        self.crtabn_début_edit = QDateEdit()
+        self.crtabn_début_edit.setDisplayFormat("MM / dd / yyyy")
+        self.crtabn_début_edit.setMaximumDate(QDate.currentDate())
+        self.crtabn_début_edit.setCalendarPopup(True)
+        self.crtabn_début_edit.setDate(QDate.currentDate())
 
-        fin_edit = QDateEdit()
-        fin_edit.setDisplayFormat("MM / dd / yyyy")
-        fin_edit.setMaximumDate(QDate.currentDate())
-        fin_edit.setCalendarPopup(True)
-        fin_edit.setDate(QDate.currentDate())
+        self.crtabn_fin_edit = QDateEdit()
+        self.crtabn_fin_edit.setDisplayFormat("MM / dd / yyyy")
+        start_date = QDate.currentDate()
+        self.crtabn_fin_edit.setMaximumDate(start_date.addYears(5))
+        self.crtabn_fin_edit.setCalendarPopup(True)
+        self.crtabn_fin_edit.setDate(QDate.currentDate())
 
-        payer_combo = QComboBox()
-        payer_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        payer_combo.addItems(["NON", "OUI"])
+        self.crtabn_payer_combo = QComboBox()
+        self.crtabn_payer_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.crtabn_payer_combo.addItems(CarteAbonnement.getDejaPayer())
 
-        valide_combo = QComboBox()
-        valide_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        valide_combo.addItems(["NON", "OUI"])
+        self.crtabn_valide_combo = QComboBox()
+        self.crtabn_valide_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.crtabn_valide_combo.addItems(CarteAbonnement.getEncoreValide())
 
         submit = QPushButton("Editer")
         submit.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        submit.clicked.connect(self.carteAbnHandler)
 
-        carte_abn_form.addRow("Abonnement:", abn_combo)
-        carte_abn_form.addRow("Chauffeur:", chauffeur_combo)
-        carte_abn_form.addRow("Commencer le:", début_edit)
-        carte_abn_form.addRow("Terminer le:", fin_edit)
-        carte_abn_form.addRow("Validité:", valide_combo)
-        carte_abn_form.addRow("Payé:", payer_combo)
+        carte_abn_form.addRow("Abonnement:",  self.crtabn_abn_combo)
+        carte_abn_form.addRow("Chauffeur:",  self.crtabn_chauffeur_combo)
+        carte_abn_form.addRow("Commencer le:",  self.crtabn_début_edit)
+        carte_abn_form.addRow("Terminer le:",  self.crtabn_fin_edit)
+        carte_abn_form.addRow("Validité:",  self.crtabn_valide_combo)
+        carte_abn_form.addRow("Payé:",  self.crtabn_payer_combo)
         carte_abn_form.addRow(submit)
 
         carte_abn_gp.setLayout(carte_abn_form)
@@ -887,7 +891,67 @@ class MainWindow(QWidget):
                 print(e.args[0])
 
     def carteAbnHandler(self):
-        print("OK")
+        abonnement_type = self.crtabn_abn_combo.currentText()
+        chauffeur = self.crtabn_chauffeur_combo.currentText()
+        debut_abn = self.crtabn_début_edit.text()
+        fin_abn = self.crtabn_fin_edit.text()
+        validité_abn = self.crtabn_valide_combo.currentText()
+        payement = self.crtabn_payer_combo.currentText()
+
+
+        if abonnement_type != "" and chauffeur != "" and debut_abn != "" and fin_abn != "" and validité_abn != ""  and payement != "":
+            if validité_abn == "OUI":
+                validité_abn = True
+            else:
+                validité_abn = False
+
+            if payement == "OUI":
+                payement = True
+            else:
+                payement = False
+
+            # Obtenir le chauffeur
+            try:
+                self.db = Database()
+                self.db.cur.execute("SELECT * FROM chauffeurs WHERE PRENOM=%s", (chauffeur,))
+                chauffeur_data = self.db.cur.fetchone()
+                print(chauffeur_data)
+                chauffeur_id = chauffeur_data[0]
+                self.db.cur.close()
+                self.db.con.close()
+            except Exception as e:
+                print(e.args[0])
+
+            # Obtenir le type d'abonnement qu'il va faire
+            try:
+                self.db = Database()
+                self.db.cur.execute("SELECT * FROM abonnements WHERE TYPE=%s", (abonnement_type,))
+                abonnement_data = self.db.cur.fetchone()
+                abonnement_id = abonnement_data[0]
+                self.db.cur.close()
+                self.db.con.close()
+            except Exception as e:
+                print(e.args[0])
+
+
+            carteAbonnement = CarteAbonnement(abonnement_id, chauffeur_id, payement, validité_abn)
+            carteAbonnement.setDebut(debut_abn)
+            carteAbonnement.setFin(fin_abn)
+
+            # Editer un carte d'abonnement
+            try:
+                self.db = Database()
+                self.db.cur.execute("""
+                    INSERT INTO carte_abonnements (ID_ABONNEMENT, ID_CHAUFEUR, DEJA_PAYER, ENCORE_VALIDE, DEBUT, FIN) VALUES (%s, %s, %s, %s, %s, %s)
+                """, (carteAbonnement.getAbonnement(), carteAbonnement.getChauffeur(), carteAbonnement.getPayer(), carteAbonnement.getValide(), carteAbonnement.getDebut(), carteAbonnement.getFin()))
+                self.db.con.commit()
+                self.db.con.close()
+                QMessageBox.information(None, 'Carte d\'abonnement', 'Elle a bien éditer.')
+            except Exception as e:
+                print(e.args[0])
+
+
+
 
     def reloadWindow(self):
         QApplication.quit()
