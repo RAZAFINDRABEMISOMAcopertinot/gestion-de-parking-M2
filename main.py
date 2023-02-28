@@ -279,8 +279,11 @@ class MainWindow(QWidget):
                 self.first_name_edit.clear()
                 self.email_edit.clear()
                 self.password_edit.clear()
+                QMessageBox.information(None, 'Bravo!', 'Inscription avec succès!')
             except Exception as e:
-                print(e.args[0])
+                QMessageBox.warning(None, 'Erreur!', 'Vérifiez bien les données que vous avez entré !')
+        else:
+            QMessageBox.warning(None, 'Erreur!', 'Tous les champs sont obligatoires!')
 
     def managementTab(self):
         management_box = QHBoxLayout()
