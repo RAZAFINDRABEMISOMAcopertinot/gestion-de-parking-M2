@@ -389,7 +389,6 @@ class MainWindow(QWidget):
         except Exception as e:
             print(e.args[0])
 
-
         # LES PERMIS
 
         # Obtenis tous les permis
@@ -454,7 +453,8 @@ class MainWindow(QWidget):
         carte_grise_table_title = QLabel("Les cartes grises des véhicules ({})".format(len(cartes_grises_data)))
         carte_grise_table = QTableWidget(len(cartes_grises_data), 7)
         carte_grise_table.setHorizontalHeaderLabels(
-            ["ID", "ENERGIE UTILISE", "TYPE", "NOMBRE DE PLACE", "IMMATRICULATION", "DATE DE MISE EN CIRCULATION", "VOITURE_ID"])
+            ["ID", "ENERGIE UTILISE", "TYPE", "NOMBRE DE PLACE", "IMMATRICULATION", "DATE DE MISE EN CIRCULATION",
+             "VOITURE_ID"])
 
         carte_grise_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
 
@@ -524,7 +524,79 @@ class MainWindow(QWidget):
         return abn_wdg
 
     def payement_wdg(self):
-        return QPushButton("Gerer les payements")
+
+        # Créer widget principale
+        pmt_wdg = QWidget()
+
+        # Créer 2 widgets vertical et horizontal
+        pmt_v_box = QVBoxLayout()
+        pmt_h_box = QHBoxLayout()
+
+        pmt_g_btn = QGroupBox()
+        pmt_g_btn.setTitle("Action")
+
+        pmt_form = QFormLayout()
+
+        pmt_label = QLabel("Editer une facture de payement")
+        pmt_label.setFont(QFont("Arial", 18))
+
+        self.pmt_date_edit = QDateEdit()
+        self.pmt_date_edit.setDisplayFormat("MM / dd / yyyy")
+        self.pmt_date_edit.setMaximumDate(QDate.currentDate())
+        self.pmt_date_edit.setCalendarPopup(True)
+        self.pmt_date_edit.setDate(QDate.currentDate())
+
+        self.abn_type_combo = QComboBox()
+        self.abn_type_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.abn_type_combo.addItems(["PERMANENT", "JOUR", "NUIT"])
+
+        self.pmt_prix_edit = QLineEdit()
+        self.pmt_prix_edit.setPlaceholderText("Prix")
+
+        self.pmt_submit = QPushButton("Editer")
+        self.pmt_submit.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
+
+        # Ajouter des lignes aux forme
+        pmt_form.addRow(pmt_label)
+        pmt_form.addRow("Editer le:", self.pmt_date_edit)
+        pmt_form.addRow("Type d'abonnement:", self.abn_type_combo)
+        pmt_form.addRow("Montant en Arriary:", self.pmt_prix_edit)
+        pmt_form.addRow(self.pmt_submit)
+
+
+        # Le tableau de payement déjà effectué
+        # Listes de abonnemnts dispo
+        pmt_effectue_gp = QGroupBox()
+        pmt_effectue_gp.setTitle("Les abonnements déja effectués")
+
+        # Tableau des abonnements disponibles
+        pmt_table = QTableWidget(3, 5)
+        pmt_table.setHorizontalHeaderLabels(["ID", "DATE D'EDITION", "MONTANT", "CHAUFFEUR_ID", "EDITEUR_ID"])
+
+        pmt_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+
+        for row in range(3):
+            for col in range(5):
+                item = QTableWidgetItem("Row {} Column {}".format(row + 1, col + 1))
+                pmt_table.setItem(row, col, item)
+
+
+        # Ajouter le formulare et le groupbox d'actions au horizontal layout
+        pmt_h_box.addLayout(pmt_form)
+        pmt_h_box.addWidget(pmt_g_btn)
+
+
+        # Ajouter le vertical layout puis le tableau au vertical layout
+        pmt_v_box.addLayout(pmt_h_box)
+        pmt_v_box.addWidget(pmt_effectue_gp)
+        pmt_v_box.addWidget(pmt_table)
+
+        # Ajouter le horital box au widget de payement
+        pmt_wdg.setLayout(pmt_v_box)
+
+
+        return pmt_wdg
 
     def chauffeurTab(self):
 
@@ -746,7 +818,6 @@ class MainWindow(QWidget):
         # Listes de abonnemnts dispo
         abn_dispo_gp = QGroupBox()
         abn_dispo_gp.setTitle("Les abonnements disponnibles")
-
 
         # Tableau des abonnements disponibles
         abn_table = QTableWidget(3, 4)
