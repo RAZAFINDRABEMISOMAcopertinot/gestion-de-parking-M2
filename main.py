@@ -354,17 +354,42 @@ class MainWindow(QWidget):
 
         # Tableau des utilisateurs
         user_table_title = QLabel("Les utilisateurs ({})".format(len(utilisateus_data)))
-        user_table = QTableWidget(len(utilisateus_data), 6)
+        user_table = QTableWidget(len(utilisateus_data), 7)
 
-        user_table.setHorizontalHeaderLabels(["ID", "NOM", "PRENOM", "EMAIL", "MOT DE PASSE", "ROLE"])
+        user_table.setHorizontalHeaderLabels(["ID", "NOM", "PRENOM", "EMAIL", "MOT DE PASSE", "ROLE", "ACTIONS"])
 
         user_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+
 
         try:
             for row, utulisateur in enumerate(utilisateus_data):
                 for col, valeur in enumerate(utulisateur):
                     item = QTableWidgetItem(valeur)
+                    item.setTextAlignment(Qt.AlignCenter)
                     user_table.setItem(row, col, item)
+
+                # inserer les bouttons d'actions aux tableau d'utilisateur
+                self.ut_mod_btn = QPushButton('Modifier')
+                self.ut_mod_btn.setObjectName("QActionBtnMod")
+                self.ut_mod_btn.setMinimumHeight(25)
+                self.ut_mod_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
+                self.ut_suppr_btn = QPushButton('Supprimer')
+                self.ut_suppr_btn.setObjectName("QActionBtnSup")
+                self.ut_suppr_btn.setMinimumHeight(25)
+                self.ut_suppr_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
+
+                # Créer layout pour les deux bouttons d'actions
+                button_layout = QHBoxLayout()
+                button_layout.addWidget(self.ut_mod_btn)
+                button_layout.addWidget(self.ut_suppr_btn)
+
+
+                # Créer un widget pour le inser le layout au dernier cellule de tableau
+                widget = QWidget()
+                widget.setLayout(button_layout)
+                user_table.setCellWidget(row, 6, widget)
         except Exception as e:
             print(e.args[0])
 
@@ -380,8 +405,8 @@ class MainWindow(QWidget):
 
         # Tableau des abonnés
         abonne_table_title = QLabel("Les chauffeurs abonnés ({})".format(len(chauffeurs_data)))
-        abonne_table = QTableWidget(len(chauffeurs_data), 5)
-        abonne_table.setHorizontalHeaderLabels(["ID", "NOM", "PRENOM", "DATE DE NAISSANCCE", "LIEU DE NAISSANCE"])
+        abonne_table = QTableWidget(len(chauffeurs_data), 6)
+        abonne_table.setHorizontalHeaderLabels(["ID", "NOM", "PRENOM", "DATE DE NAISSANCCE", "LIEU DE NAISSANCE", "ACTIONS"])
 
         abonne_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         try:
@@ -389,6 +414,26 @@ class MainWindow(QWidget):
                 for col, valeur in enumerate(chauffeur):
                     item = QTableWidgetItem(str(valeur))
                     abonne_table.setItem(row, col, item)
+
+                self.chauff_mod_btn = QPushButton('Modifier')
+                self.chauff_mod_btn.setObjectName("QActionBtnMod")
+                self.chauff_mod_btn.setMinimumHeight(25)
+                self.chauff_mod_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
+                self.chauff_suppr_btn = QPushButton('Supprimer')
+                self.chauff_suppr_btn.setObjectName("QActionBtnSup")
+                self.chauff_suppr_btn.setMinimumHeight(25)
+                self.chauff_suppr_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
+                # Créer layout pour les deux bouttons d'actions
+                button_layout = QHBoxLayout()
+                button_layout.addWidget(self.chauff_mod_btn)
+                button_layout.addWidget(self.chauff_suppr_btn)
+
+                # Créer un widget pour le inser le layout au dernier cellule de tableau
+                widget = QWidget()
+                widget.setLayout(button_layout)
+                abonne_table.setCellWidget(row, 5, widget)
         except Exception as e:
             print(e.args[0])
 
@@ -404,8 +449,8 @@ class MainWindow(QWidget):
 
         # Tableau de permis
         permis_table_title = QLabel("Les permis ({})".format(len(permis_data)))
-        permis_table = QTableWidget(len(permis_data), 5)
-        permis_table.setHorizontalHeaderLabels(["ID", "CIM", "CATEGORIE", "VALIDITE", "CHAUFFEUR_ID"])
+        permis_table = QTableWidget(len(permis_data), 6)
+        permis_table.setHorizontalHeaderLabels(["ID", "CIM", "CATEGORIE", "VALIDITE", "CHAUFFEUR_ID", "ACTIONS"])
 
         permis_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
 
@@ -414,6 +459,26 @@ class MainWindow(QWidget):
                 for col, valeur in enumerate(permis):
                     item = QTableWidgetItem(str(valeur))
                     permis_table.setItem(row, col, item)
+
+                self.permis_mod_btn = QPushButton('Modifier')
+                self.permis_mod_btn.setObjectName("QActionBtnMod")
+                self.permis_mod_btn.setMinimumHeight(25)
+                self.permis_mod_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
+                self.permis_suppr_btn = QPushButton('Supprimer')
+                self.permis_suppr_btn.setObjectName("QActionBtnSup")
+                self.permis_suppr_btn.setMinimumHeight(25)
+                self.permis_suppr_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
+                # Créer layout pour les deux bouttons d'actions
+                button_layout = QHBoxLayout()
+                button_layout.addWidget(self.permis_mod_btn)
+                button_layout.addWidget(self.permis_suppr_btn)
+
+                # Créer un widget pour le inser le layout au dernier cellule de tableau
+                widget = QWidget()
+                widget.setLayout(button_layout)
+                permis_table.setCellWidget(row, 5, widget)
         except Exception as e:
             print(e.args[0])
 
@@ -429,9 +494,9 @@ class MainWindow(QWidget):
 
         # Tableau des véhicules
         vehicule_table_title = QLabel("Les véhicules ({})".format(len(voitures_data)))
-        vehicule_table = QTableWidget(len(voitures_data), 6)
+        vehicule_table = QTableWidget(len(voitures_data), 7)
         vehicule_table.setHorizontalHeaderLabels(
-            ["ID", "NUM IMMATRICULE", "MARQUE", "COULEUR", "DANS LE PACKING", "CHAUFFEUR_ID"])
+            ["ID", "NUM IMMATRICULE", "MARQUE", "COULEUR", "DANS LE PACKING", "CHAUFFEUR_ID", "ACTIONS"])
 
         vehicule_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
 
@@ -439,6 +504,26 @@ class MainWindow(QWidget):
             for col, valeur in enumerate(voiture):
                 item = QTableWidgetItem(str(valeur))
                 vehicule_table.setItem(row, col, item)
+
+            self.veh_mod_btn = QPushButton('Modifier')
+            self.veh_mod_btn.setObjectName("QActionBtnMod")
+            self.veh_mod_btn.setMinimumHeight(25)
+            self.veh_mod_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
+            self.veh_suppr_btn = QPushButton('Supprimer')
+            self.veh_suppr_btn.setObjectName("QActionBtnSup")
+            self.veh_suppr_btn.setMinimumHeight(25)
+            self.veh_suppr_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
+            # Créer layout pour les deux bouttons d'actions
+            button_layout = QHBoxLayout()
+            button_layout.addWidget(self.veh_mod_btn)
+            button_layout.addWidget(self.veh_suppr_btn)
+
+            # Créer un widget pour le inser le layout au dernier cellule de tableau
+            widget = QWidget()
+            widget.setLayout(button_layout)
+            vehicule_table.setCellWidget(row, 6, widget)
 
         # LES CARTES GRISES
 
@@ -454,10 +539,10 @@ class MainWindow(QWidget):
         # Tableau de cartes grises
 
         carte_grise_table_title = QLabel("Les cartes grises des véhicules ({})".format(len(cartes_grises_data)))
-        carte_grise_table = QTableWidget(len(cartes_grises_data), 7)
+        carte_grise_table = QTableWidget(len(cartes_grises_data), 8)
         carte_grise_table.setHorizontalHeaderLabels(
             ["ID", "ENERGIE UTILISE", "TYPE", "NOMBRE DE PLACE", "IMMATRICULATION", "DATE DE MISE EN CIRCULATION",
-             "VOITURE_ID"])
+             "VOITURE_ID", "ACTIONS"])
 
         carte_grise_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
 
@@ -465,6 +550,26 @@ class MainWindow(QWidget):
             for col, valeur in enumerate(carte_grise):
                 item = QTableWidgetItem(str(valeur))
                 carte_grise_table.setItem(row, col, item)
+
+            self.carte_grise_mod_btn = QPushButton('Modifier')
+            self.carte_grise_mod_btn.setObjectName("QActionBtnMod")
+            self.carte_grise_mod_btn.setMinimumHeight(25)
+            self.carte_grise_mod_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
+            self.carte_grise_suppr_btn = QPushButton('Supprimer')
+            self.carte_grise_suppr_btn.setObjectName("QActionBtnSup")
+            self.carte_grise_suppr_btn.setMinimumHeight(25)
+            self.carte_grise_suppr_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
+            # Créer layout pour les deux bouttons d'actions
+            button_layout = QHBoxLayout()
+            button_layout.addWidget(self.carte_grise_mod_btn)
+            button_layout.addWidget(self.carte_grise_suppr_btn)
+
+            # Créer un widget pour le inser le layout au dernier cellule de tableau
+            widget = QWidget()
+            widget.setLayout(button_layout)
+            carte_grise_table.setCellWidget(row, 7, widget)
 
         dhb_v_box = QVBoxLayout()
 

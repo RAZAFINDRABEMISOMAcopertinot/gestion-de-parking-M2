@@ -61,7 +61,19 @@ style_sheet = """
         color: #961A07;
     }
     QPushButton#BackBut{
+        background-color: #66aff5;
+    }
+    QPushButton#QActionBtnSup{
+        padding: 1px;
+        margin-bottom: 3px;
         background-color: #C92108;
+        height: 10px;
+    }
+    QPushButton#QActionBtnMod{
+        padding: 1px;
+        margin-bottom: 3px;
+        background-color: #228C22;
+        height: 10px;
     }
     QHBoxLayout#ManagementLayout{
         border-width: 2px;
