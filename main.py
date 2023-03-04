@@ -378,6 +378,8 @@ class MainWindow(QWidget):
                 self.ut_suppr_btn.setObjectName("QActionBtnSup")
                 self.ut_suppr_btn.setMinimumHeight(25)
                 self.ut_suppr_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+                print(utulisateur)
+                self.ut_suppr_btn.clicked.connect(lambda: self.supprimer_utilisateur(utulisateur[0]))
 
 
                 # Créer layout pour les deux bouttons d'actions
@@ -424,6 +426,7 @@ class MainWindow(QWidget):
                 self.chauff_suppr_btn.setObjectName("QActionBtnSup")
                 self.chauff_suppr_btn.setMinimumHeight(25)
                 self.chauff_suppr_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+                self.chauff_suppr_btn.clicked.connect(lambda: self.supprimer_chauffeur(chauffeur[0]))
 
                 # Créer layout pour les deux bouttons d'actions
                 button_layout = QHBoxLayout()
@@ -469,6 +472,7 @@ class MainWindow(QWidget):
                 self.permis_suppr_btn.setObjectName("QActionBtnSup")
                 self.permis_suppr_btn.setMinimumHeight(25)
                 self.permis_suppr_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+                self.permis_suppr_btn.clicked.connect(lambda: self.supprimer_permis(permis[0]))
 
                 # Créer layout pour les deux bouttons d'actions
                 button_layout = QHBoxLayout()
@@ -514,6 +518,7 @@ class MainWindow(QWidget):
             self.veh_suppr_btn.setObjectName("QActionBtnSup")
             self.veh_suppr_btn.setMinimumHeight(25)
             self.veh_suppr_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+            self.veh_suppr_btn.clicked.connect(lambda: self.supprimer_voiture(voiture[0]))
 
             # Créer layout pour les deux bouttons d'actions
             button_layout = QHBoxLayout()
@@ -560,6 +565,7 @@ class MainWindow(QWidget):
             self.carte_grise_suppr_btn.setObjectName("QActionBtnSup")
             self.carte_grise_suppr_btn.setMinimumHeight(25)
             self.carte_grise_suppr_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+            self.carte_grise_suppr_btn.clicked.connect(lambda: self.supprimer_carte_grise(carte_grise[0]))
 
             # Créer layout pour les deux bouttons d'actions
             button_layout = QHBoxLayout()
@@ -588,6 +594,68 @@ class MainWindow(QWidget):
         dhb_wdg.setLayout(dhb_v_box)
 
         return dhb_wdg
+
+    # Supprimer un utilisateur
+    def supprimer_utilisateur(self, arg):
+        try:
+            self.db = Database()
+            self.db.cur.execute("""DELETE FROM utilisateurs WHERE ID=%s""", (arg,))
+            self.db.cur.close()
+            self.db.con.commit()
+            self.db.con.close()
+            QMessageBox.information(None, 'Bravo!', 'Suppression avec succès!')
+        except Exception as e:
+            QMessageBox.warning(None, 'Erreur!', 'Quelque ne vas pas très bien!')
+
+    # Supprimer un chauffeur
+    def supprimer_chauffeur(self, arg):
+        try:
+            self.db = Database()
+            self.db.cur.execute("""DELETE FROM chauffeurs WHERE ID=%s""", (arg,))
+            self.db.cur.close()
+            self.db.con.commit()
+            self.db.con.close()
+            QMessageBox.information(None, 'Bravo!', 'Suppression avec succès!')
+        except Exception as e:
+            QMessageBox.warning(None, 'Erreur!', 'Quelque ne vas pas très bien!')
+
+    # Supprimer un permis d'un cheuffeur
+    def supprimer_permis(self, arg):
+        try:
+            self.db = Database()
+            self.db.cur.execute("""DELETE FROM permis WHERE ID=%s""", (arg,))
+            self.db.cur.close()
+            self.db.con.commit()
+            self.db.con.close()
+            QMessageBox.information(None, 'Bravo!', 'Suppression avec succès!')
+        except Exception as e:
+            QMessageBox.warning(None, 'Erreur!', 'Quelque ne vas pas très bien!')
+
+    # Supprimer un voiture
+    def supprimer_voiture(self, arg):
+        try:
+            self.db = Database()
+            self.db.cur.execute("""DELETE FROM voitures WHERE ID=%s""", (arg,))
+            self.db.cur.close()
+            self.db.con.commit()
+            self.db.con.close()
+            QMessageBox.information(None, 'Bravo!', 'Suppression avec succès!')
+        except Exception as e:
+            QMessageBox.warning(None, 'Erreur!', 'Quelque ne vas pas très bien!')
+
+    # Supprimer un carte grise
+    def supprimer_carte_grise(self, arg):
+        try:
+            self.db = Database()
+            self.db.cur.execute("""DELETE FROM carte_grises WHERE ID=%s""", (arg,))
+            self.db.cur.close()
+            self.db.con.commit()
+            self.db.con.close()
+            QMessageBox.information(None, 'Bravo!', 'Suppression avec succès!')
+        except Exception as e:
+            QMessageBox.warning(None, 'Erreur!', 'Quelque ne vas pas très bien!')
+
+
 
     def abonnement_wdg(self):
         abn_wdg = QWidget()
